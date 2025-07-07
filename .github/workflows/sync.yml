@@ -1,0 +1,27 @@
+name: Finance Sync (Free)
+
+on:
+  schedule:
+    - cron: '0 20 * * *'  # daily at 2 AM IST
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python src/handlers/cli.py
+      - name: Commit updated state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add state.json
+            git commit -m "Update last_timestamp"
+            git push
+          fi
